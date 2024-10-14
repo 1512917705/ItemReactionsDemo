@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>物品反应测试</title>
+</head>
+<body>
+<div id="c"></div>
+
+<script>
+    /*
+    框架思路：
+    物品多继承各种性质类，性质具有属性、主动功能函数、被动功能函数。
+    主动功能函数需要注册，不过多继承时候会自动注册。
+    物品和物品反应时候，会互相挨个触发所有主动功能。
+    如果对方不满足功能触发条件，就不触发。
+    比如说对方没有被点燃功能，就不会被火点燃。
+    */
+class 物品基类 {
+    constructor() {
+        this.name = name;
+        this.物品主动函数列表 = [];
+        this.物品被动函数列表 = [];
+        this.reactions = {};
+    }
+
+    // 注册反应函数
+    registerReaction(eventName, reactionFunc) {
+        if (!this.reactions[eventName]) {
+            this.reactions[eventName] = [];
+        }
+        this.reactions[eventName].push(reactionFunc);
+    }
+
+    // 触发所有注册的反应函数
+    triggerReactions(other) {
+        Object.keys(this.reactions).forEach(eventName => {
+            const reactionList = this.reactions[eventName];
+            reactionList.forEach((reaction, index) => {
+                reaction(other);
+            });
+        });
+    }
+    
+    // 多继承函数，为了自动注册主动功能函数，所以放到类里
+    mixin(...sources) { 
+        sources.forEach(source => {
+            Object.getOwnPropertyNames(source.prototype).forEach(name => {
+                if (name !== 'constructor') {
+                    this[name] = source.prototype[name];
+
+                    // 检查静态属性 主动函数列表 是否包含当前方法名
+                    if (source.主动函数列表 && source.主动函数列表.includes(name)) {
+                        const reactionFunc = this[name];
+                        this.registerReaction(name, reactionFunc.bind(this));
+                        this.物品主动函数列表.push(name);
+                    } else if (source.被动函数列表 && source.被动函数列表.includes(name)) {
+                        this.物品被动函数列表.push(name);
+                    }
+                }
+            });
+        });
+    }
+}
+
+
+
+//枚举类，为了方便AI理解
+const 燃点量词枚举 = Object.freeze({
+    白磷: 40,      // 白磷的燃点大约在40摄氏度
+    纸张: 180,     // 纸张的燃点大约在180摄氏度
+    木材: 300,     // 木材的燃点大约在300摄氏度
+    塑料: 350,     // 不同类型的塑料燃点不同，这里取一个大概值
+    布料: 400,     // 棉布的燃点大约在400摄氏度
+    橡胶: 450,     // 橡胶的燃点取决于类型，这里取一个大概值
+    不可燃: 1000000,        // 不可燃，这里取1兆
+
+    40: "白磷",
+    180: "纸张",
+    300: "木材",
+    350: "塑料",
+    400: "布料",
+    450: "橡胶",
+    1000000: "不可燃"
+});
+
+//性质，可以被多继承
+class 可燃性质类 {
+    static 主动函数列表 = [];
+    static 被动函数列表 = ["可燃性"];
+        constructor() {
+            this._燃点描述 = '';
+            this._燃点数值 = 0;
+        }
+
+        // 燃点描述
+        get 燃点描述() {
+            return this._燃点描述;
+        }
+        set 燃点描述(value) {
+            this._燃点描述 = value;
+        }
+
+        // 燃点数值
+        get 燃点数值() {
+            return this._燃点数值;
+        }
+        set 燃点数值(value) {
+            if (typeof value === 'number') {
+                this._燃点数值 = value;
+            } else {
+                console.error('燃点数值必须是数字类型');
+            }
+        }
+
+    // 功能
+    可燃性(flame) {
+        console.log(` ${this.name} 被 ${flame.name} 烧了`);
+    }
+}
+
+//性质，可以被多继承
+class 基础物理性质 {
+    static 主动函数列表 = ["碰撞"];
+    static 被动函数列表 = [];
+    constructor() {
+        this.温度;
+        this.质量;
+        this.速度;
+    }
+    
+    碰撞(target) {
+        console.log(` ${this.name} 和 ${target.name} 发生碰撞`);
+    }
+}
+
+//性质，可以被多继承
+class 燃烧性类 {
+    static 主动函数列表 = ["燃烧"];
+    static 被动函数列表 = [];
+    constructor() {
+    }
+
+    燃烧(target) {
+        if (typeof target.可燃性 === 'function') {
+            console.log(` ${this.name} 要去烧 ${target.name}`);
+            target.可燃性(this); // 传递火焰对象作为参数
+        } else {
+            console.log(` ${this.name} 尝试烧 ${target.name}，但是目标没有定义 可燃性 反应`);
+        }
+    }
+}
+
+// 示例物体A - 火焰
+class 火焰 extends 物品基类 {
+    constructor() {
+        super();
+        this.name = "火"
+        this.mixin(火焰, 基础物理性质, 燃烧性类); // 物品多继承各种性质
+    }
+}
+
+// 示例物体B - 木头
+class 木头 extends 物品基类 {
+    constructor() {
+        super();
+        this.name = "木头"
+        this.mixin(木头, 可燃性质类, 基础物理性质); // 物品多继承各种性质
+    }
+ 
+}
+
+// 使两个物体相互作用
+function interact(obj1, obj2) {
+    obj1.triggerReactions(obj2);
+    obj2.triggerReactions(obj1);
+}
+
+// 创建两个物体实例
+const 火 = new 火焰();
+const 木 = new 木头();
+
+// 测试交互
+interact(火, 木);
+console.log(火)
+console.log(木)
+
+</script>
+</body>
+</html>
