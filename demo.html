@@ -89,28 +89,8 @@ class 可燃性质类 {
     static 主动函数列表 = [];
     static 被动函数列表 = ["可燃性"];
         constructor() {
-            this._燃点描述 = '';
-            this._燃点数值 = 0;
-        }
-
-        // 燃点描述
-        get 燃点描述() {
-            return this._燃点描述;
-        }
-        set 燃点描述(value) {
-            this._燃点描述 = value;
-        }
-
-        // 燃点数值
-        get 燃点数值() {
-            return this._燃点数值;
-        }
-        set 燃点数值(value) {
-            if (typeof value === 'number') {
-                this._燃点数值 = value;
-            } else {
-                console.error('燃点数值必须是数字类型');
-            }
+            this.燃点描述 = '';
+            this.燃点数值 = 0;
         }
 
     // 功能
@@ -119,19 +99,103 @@ class 可燃性质类 {
     }
 }
 
+const 物质存在状态枚举 = Object.freeze({
+        固体: "固体",
+        液体: "液体",
+        气体: "气体"
+    });
+
+    const 质量量词枚举 = Object.freeze({
+        无: "无",
+        克级: "克级", //一克
+        千克级: "千克级", //一千克
+        吨级: "吨级", // 一吨
+    });
+
+    const 体积量词枚举 = Object.freeze({
+        无: "无",
+        立方厘米级: "立方厘米级", //一立方厘米级
+        立方分米级: "立方分米级", //一立方分米级
+        立方米级: "立方米级", //一立方米级
+    });
+
+    const 硬度量词枚举 = Object.freeze({
+        无: 0,
+        0: "无",
+        滑石: 1,
+        1: "滑石",
+        石膏: 2,
+        2: "石膏",
+        方解石: 3,
+        3: "方解石",
+        萤石: 4,
+        4: "萤石",
+        磷灰石: 5,
+        5: "磷灰石",
+        长石: 6,
+        6: "长石",
+        石英: 7,
+        7: "石英",
+        黄玉: 8,
+        8: "黄玉",
+        刚玉: 9,
+        9: "刚玉",
+        金刚石: 10,
+        10: "金刚石",
+        未知: 11,
+        11: "未知"
+    });
+
+    const 韧性量词枚举 = Object.freeze({
+        无: 0,
+        纸张: 1,      // 极易撕裂
+        塑料袋: 2,    // 相对容易撕裂但比纸张坚韧
+        木材: 3,      // 中等韧性
+        皮革: 4,      // 较好的韧性
+        钢材: 5,      // 高韧性，能够承受较大外力
+        尼龙绳: 6,    // 非常高的韧性，用于承重
+        凯夫拉纤维: 7,// 极高韧性，用于防弹衣等
+        未知: 8,       // 未知韧性等级
+
+        0: "无",
+        1: "纸张",
+        2: "塑料袋",
+        3: "木材",
+        4: "皮革",
+        5: "钢材",
+        6: "尼龙绳",
+        7: "凯夫拉纤维",
+        8: "未知"
+    });
+
 //性质，可以被多继承
 class 基础物理性质 {
     static 主动函数列表 = ["碰撞"];
     static 被动函数列表 = [];
     constructor() {
-        this.温度;
-        this.质量;
-        this.速度;
+        this.x = 0;
+        this.y = 0;
+        this.速度 = 0;
+        this.速度角度 = 0; //极坐标
+        this.温度 = 20;
+
+        // 需要AI进行初始化的变量，为了方便AI描述，所以有描述字段
+        this.存在状态 = 物质存在状态枚举.固体;
+        this.质量描述 = 质量量词枚举.无; // 初始化为默认值
+        this.质量数值 = 0;
+        this.速度角度 = 0; // 0-360度
+        this.体积描述 = 体积量词枚举.无; // 初始化为默认值
+        this.体积数值 = 0;
+        this.硬度描述 = '';
+        this.硬度数值 = 0;
+        this.韧性描述 = '';
+        this.韧性数值 = 0;
     }
     
     碰撞(target) {
         console.log(` ${this.name} 和 ${target.name} 发生碰撞`);
     }
+
 }
 
 //性质，可以被多继承
@@ -140,22 +204,192 @@ class 燃烧性类 {
     static 被动函数列表 = [];
     constructor() {
     }
-
-    燃烧(target) {
-        if (typeof target.可燃性 === 'function') {
-            console.log(` ${this.name} 要去烧 ${target.name}`);
-            target.可燃性(this); // 传递火焰对象作为参数
+    
+    可燃性(flame) {
+        if (flame.温度 >= this.燃点) { // 判断火焰温度是否达到燃点
+            console.log(` ${this.name} 被 ${flame.name} 烧了，因温度达到或超过 ${this.燃点}`);
         } else {
-            console.log(` ${this.name} 尝试烧 ${target.name}，但是目标没有定义 可燃性 反应`);
+            console.log(` ${this.name} 没有被 ${flame.name} 烧着，因温度低于 ${this.燃点}`);
+        }
+    }
+
+}
+// 酸碱度枚举
+const 酸碱度枚举 = Object.freeze({
+    强酸: -3,
+    弱酸: -1,
+    中性: 0,
+    弱碱: 1,
+    强碱: 3,
+
+    '-3': "强酸",
+    '-1': "弱酸",
+    '0': "中性",
+    '1': "弱碱",
+    '3': "强碱"
+});
+
+// 酸碱性类
+class 酸碱性类 {
+    static 主动函数列表 = [];
+    static 被动函数列表 = ["酸碱性"];
+    constructor() {
+        this.酸碱度 = 酸碱度枚举.中性; // 默认值
+    }
+
+    // 酸碱性反应
+    酸碱性(target) {
+        console.log(`${this.name} 的酸碱度为 ${this.酸碱度}，与 ${target.name} 相互作用`);
+    }
+}
+// 腐蚀性类
+class 腐蚀性类 {
+    static 主动函数列表 = ["腐蚀"];
+    static 被动函数列表 = [];
+    constructor() {
+        this.腐蚀等级 = 腐蚀性枚举.无腐蚀; // 默认腐蚀性
+    }
+
+    // 腐蚀功能
+    腐蚀(target) {
+        if (target.金属种类 && target.金属种类 !== "未知") {
+            console.log(`${this.name} 腐蚀了 ${target.name}，产生了化学反应`);
+            // 可以在这里根据腐蚀性等级，对金属产生不同的效果
+        } else {
+            console.log(`${this.name} 尝试腐蚀 ${target.name}，但没有反应`);
         }
     }
 }
+
+// 更新腐蚀性枚举
+const 腐蚀性枚举 = Object.freeze({
+    无腐蚀: 0,
+    弱腐蚀: 1,
+    中等腐蚀: 2,
+    强腐蚀: 3,
+    超强腐蚀: 4,
+
+    '0': "无腐蚀",
+    '1': "弱腐蚀",
+    '2': "中等腐蚀",
+    '3': "强腐蚀",
+    '4': "超强腐蚀"
+});
+
+
+// 氧化性枚举
+const 氧化性枚举 = Object.freeze({
+    强氧化性: 5,
+    中氧化性: 3,
+    弱氧化性: 1,
+    无氧化性: 0,
+
+    '5': "强氧化性",
+    '3': "中氧化性",
+    '1': "弱氧化性",
+    '0': "无氧化性"
+});
+
+// 金属性类
+class 金属性类 {
+    static 主动函数列表 = ["锈蚀"];
+    static 被动函数列表 = [];
+    constructor() {
+        this.金属种类 = this.name;
+        this.氧化性 = 氧化性枚举.无氧化性;
+    }
+
+    // 锈蚀反应
+    锈蚀(target) {
+        if (target.腐蚀等级 && target.腐蚀等级 > 腐蚀性枚举.无腐蚀) {
+            console.log(`${this.name} 被 ${target.name} 腐蚀，产生锈蚀`);
+        } else if (this.氧化性 > 氧化性枚举.无氧化性) {
+            console.log(`${this.name} 自然氧化，产生锈蚀`);
+        } else {
+            console.log(`${this.name} 没有发生锈蚀`);
+        }
+    }
+}
+
+
+// 氧化性类 
+class 氧化性类 {
+    static 主动函数列表 = ["氧化"];
+    static 被动函数列表 = [];
+    constructor() {
+        this.氧化性 = 氧化性枚举.无氧化性; // 默认值
+    }
+
+    // 氧化功能
+    氧化(target) {
+        console.log(`${this.name} 尝试氧化 ${target.name}，但 ${target.name} 的氧化性为 ${target.氧化性}`);
+    }
+}
+
+// 示例物体F - 铁
+class 铁 extends 物品基类 {
+    constructor() {
+        super();
+        this.name = "铁";
+        this.氧化性 = 氧化性枚举.中氧化性; // 铁有中等氧化性
+        this.mixin(铁, 金属性类, 氧化性类, 基础物理性质); // 多继承性质
+    }
+}
+
+
+// 示例物体G - 铜
+class 铜 extends 物品基类 {
+    constructor() {
+        super();
+        this.name = "铜";
+        this.金属种类 = "铜";
+        this.氧化性 = 氧化性枚举.弱氧化性; // 铜有较弱的氧化性
+        this.mixin(铜, 金属性类, 氧化性类, 基础物理性质); // 多继承性质
+    }
+}
+
+
+// 示例物体C - 盐酸
+class 盐酸 extends 物品基类 {
+    constructor() {
+        super();
+        this.name = "盐酸";
+        this.酸碱度 = 酸碱度枚举.强酸;
+        this.腐蚀等级 = 腐蚀性枚举.中腐蚀; // 盐酸具有中度腐蚀性
+        this.mixin(盐酸, 酸碱性类, 腐蚀性类, 基础物理性质); // 多继承性质
+    }
+}
+
+// 示例物体D - 硫酸
+class 硫酸 extends 物品基类 {
+    constructor() {
+        super();
+        this.name = "硫酸";
+        this.酸碱度 = 酸碱度枚举.强酸;
+        this.腐蚀等级 = 腐蚀性枚举.强腐蚀; // 硫酸具有强腐蚀性
+        this.mixin(硫酸, 酸碱性类, 腐蚀性类, 基础物理性质); // 多继承性质
+    }
+}
+
+// 示例物体E - 水
+class 水 extends 物品基类 {
+    constructor() {
+        super();
+        this.name = "水";
+        this.酸碱度 = 酸碱度枚举.中性;
+        this.腐蚀等级 = 腐蚀性枚举.无腐蚀; // 水没有腐蚀性
+        this.mixin(水, 酸碱性类, 基础物理性质); // 多继承性质
+    }
+}
+
 
 // 示例物体A - 火焰
 class 火焰 extends 物品基类 {
     constructor() {
         super();
         this.name = "火"
+        this.温度 = 800;
+        this.燃点 = 燃点量词枚举.白磷; // 新增属性，默认火焰的燃点是白磷的燃点
         this.mixin(火焰, 基础物理性质, 燃烧性类); // 物品多继承各种性质
     }
 }
@@ -165,6 +399,8 @@ class 木头 extends 物品基类 {
     constructor() {
         super();
         this.name = "木头"
+        this.温度 = 20;
+        this.燃点 = 燃点量词枚举.木材; // 新增属性，木头的燃点设为木材的燃点
         this.mixin(木头, 可燃性质类, 基础物理性质); // 物品多继承各种性质
     }
  
@@ -184,6 +420,28 @@ const 木 = new 木头();
 interact(火, 木);
 console.log(火)
 console.log(木)
+
+// 创建物体实例
+const 铁物体 = new 铁();
+const 盐酸物体 = new 盐酸();
+const 硫酸物体 = new 硫酸();
+const 水物体 = new 水();
+
+// 测试交互：铁与盐酸（腐蚀反应）
+interact(铁物体, 盐酸物体);
+
+// 测试交互：铁与硫酸（腐蚀反应）
+interact(铁物体, 硫酸物体);
+
+// 测试交互：铁与水（锈蚀反应）
+interact(铁物体, 水物体);
+
+// 输出物体状态
+console.log(铁物体);
+console.log(盐酸物体);
+console.log(硫酸物体);
+console.log(水物体);
+
 
 </script>
 </body>
